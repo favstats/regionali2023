@@ -243,6 +243,8 @@ targeting_on_each <- howmuchisinterest %>%
 
 return(targeting_on_each)   
 }
+
+relationshipstuff <- "[r|R]elationship|Parents|Partner|Separated|Divorced|Single|Complicated|Married|Engaged|Newlywed|Civil Union|Unspecified"
 ```
 
 
@@ -1401,9 +1403,9 @@ plot_geography_parties(par_each_lazio7)
 
 ```
 
-## Top Contested Audiences {.tabset .tabset-fade .tabset-pills}
+## Interessi e Audience {.tabset .tabset-fade .tabset-pills}
 
-Here, we show the *top most contested audiences*, i.e. where all coalitions/parties have spent considerable amounts of money competing to reach voters with the same interests. Most (but not all) of these audiences are "interest" audiences, i.e. the parties targeted people interested in "Books" or "Politics".
+Qui mostriamo i *pubblici più contestati*, ovvero quelli in cui tutte le coalizioni/partiti hanno investito somme considerevoli per competere nella targettizzazione degli elettori con gli stessi interessi. La maggior parte (ma non tutti) di questi pubblici sono "interessi", ovvero i partiti si sono rivolti alle persone interessate a "Libri" o "Politica".
 
 
 ### Elezioni regionali in Lombardia  {.tabset .tabset-fade .tabset-pills}
@@ -2348,7 +2350,7 @@ gender_targeting %>%
     
 ```
 
-## Educazione
+## Targeting dei Livelli di Educazione
 
 ### Elezioni regionali in Lombardia {.tabset .tabset-fade .tabset-pills}
 
@@ -2654,7 +2656,7 @@ lazio7 %>%
 ```
 
 
-## Jobs
+## Targeting di Professioni
 
 ### Elezioni regionali in Lombardia  {.tabset .tabset-fade .tabset-pills}
 
@@ -2704,7 +2706,7 @@ lombardy30 %>%
     group_split(coalition, election) %>% 
     map_dfr(calc_jobs_perc) %>% 
     filter(perc >= 0.015) %>% 
-    filter(str_detect(value, "Relationship|Parents|Partner|Separated|Divorced|Single|Complicated", negate = T)) %>% 
+    filter(str_detect(value, relationshipstuff, negate = T)) %>% 
      mutate(coalition = fct_relevel(coalition, c("Coalizione di centro-sinistra",
                                   "Terzo Polo",
                                   "Coalizione di centro-destra"))) %>% 
@@ -2741,7 +2743,7 @@ lombardy7 %>%
     group_split(coalition, election) %>% 
     map_dfr(calc_jobs_perc) %>% 
     filter(perc >= 0.015) %>% 
-    filter(str_detect(value, "Relationship|Parents|Partner|Separated|Divorced|Single|Complicated", negate = T)) %>% 
+    filter(str_detect(value, relationshipstuff, negate = T)) %>% 
      mutate(coalition = fct_relevel(coalition, c("Coalizione di centro-sinistra",
                                   "Terzo Polo",
                                   "Coalizione di centro-destra"))) %>% 
@@ -2774,20 +2776,20 @@ lombardy7 %>%
 
 ##### `r last30days_string` (Ultimi 30 giorni)
 
-```{r, fig.width= 8, fig.height=5, dpi = 300}
+```{r, fig.width= 10, fig.height=9, dpi = 300}
 
 lombardy30 %>% 
     group_split(party, election) %>% 
     map_dfr(calc_jobs_perc) %>% 
     filter(perc >= 0.015) %>% 
-    filter(str_detect(value, "Relationship|Parents|Partner|Separated|Divorced|Single|Complicated", negate = T)) %>% 
+    filter(str_detect(value, relationshipstuff, negate = T)) %>% 
      # mutate(coalition = fct_relevel(coalition, c("Coalizione di centro-sinistra",
      #                              "Terzo Polo",
      #                              "Coalizione di centro-destra"))) %>% 
     mutate(value = fct_reorder(value, perc)) %>% 
     ggplot(aes(value, perc, fill = party)) +
     geom_col(alpha = 0.8) +
-    facet_wrap(~party) +
+    facet_wrap(~party, scales = "free") +
     coord_flip() +
     ggthemes::theme_hc() +
     # scale_fill_manual(values = c("#ef3e3e", "#0039aa", "#0a6be1")) +
@@ -2808,20 +2810,20 @@ lombardy30 %>%
 
 ##### `r last7days_string` (Ultimi 7 giorni)
 
-```{r, fig.width= 8, fig.height=5, dpi = 300}
+```{r, fig.width= 10, fig.height=9, dpi = 300}
 
 lombardy7 %>% 
     group_split(party, election) %>% 
     map_dfr(calc_jobs_perc) %>% 
     filter(perc >= 0.015) %>% 
-    filter(str_detect(value, "Relationship|Parents|Partner|Separated|Divorced|Single|Complicated", negate = T)) %>% 
+    filter(str_detect(value, relationshipstuff, negate = T)) %>% 
      # mutate(coalition = fct_relevel(coalition, c("Coalizione di centro-sinistra",
      #                              "Terzo Polo",
      #                              "Coalizione di centro-destra"))) %>% 
     mutate(value = fct_reorder(value, perc)) %>% 
     ggplot(aes(value, perc, fill = party)) +
     geom_col(alpha = 0.8) +
-    facet_wrap(~party) +
+    facet_wrap(~party, scales = "free") +
     coord_flip() +
     ggthemes::theme_hc() +
     # scale_fill_manual(values = c("#ef3e3e", "#0039aa", "#0a6be1")) +
@@ -2853,7 +2855,7 @@ lazio30 %>%
     group_split(coalition, election) %>% 
     map_dfr(calc_jobs_perc) %>% 
     filter(perc >= 0.015) %>% 
-    filter(str_detect(value, "Relationship|Parents|Partner|Separated|Divorced|Single|Complicated", negate = T)) %>% 
+    filter(str_detect(value, relationshipstuff, negate = T)) %>% 
      mutate(coalition = fct_relevel(coalition, c("Coalizione di centro-sinistra",
                                   "Terzo Polo",
                                   "Coalizione di centro-destra"))) %>% 
@@ -2888,7 +2890,7 @@ lazio7 %>%
     group_split(coalition, election) %>% 
     map_dfr(calc_jobs_perc) %>% 
     filter(perc >= 0.015) %>% 
-    filter(str_detect(value, "Relationship|Parents|Partner|Separated|Divorced|Single|Complicated", negate = T)) %>% 
+    filter(str_detect(value, relationshipstuff, negate = T)) %>% 
      mutate(coalition = fct_relevel(coalition, c("Coalizione di centro-sinistra",
                                   "Terzo Polo",
                                   "Coalizione di centro-destra"))) %>% 
@@ -2921,20 +2923,20 @@ lazio7 %>%
 ##### `r last30days_string` (Ultimi 30 giorni)
 
 
-```{r, fig.width= 8, fig.height=5, dpi = 300}
+```{r, fig.width= 10, fig.height=9, dpi = 300}
 
 lazio30 %>% 
     group_split(party, election) %>% 
     map_dfr(calc_jobs_perc) %>% 
     filter(perc >= 0.015) %>% 
-    filter(str_detect(value, "Relationship|Parents|Partner|Separated|Divorced|Single|Complicated", negate = T)) %>% 
+    filter(str_detect(value, relationshipstuff, negate = T)) %>% 
      # mutate(coalition = fct_relevel(coalition, c("Coalizione di centro-sinistra",
      #                              "Terzo Polo",
      #                              "Coalizione di centro-destra"))) %>% 
     mutate(value = fct_reorder(value, perc)) %>% 
     ggplot(aes(value, perc, fill = party)) +
     geom_col(alpha = 0.8) +
-    facet_wrap(~party) +
+    facet_wrap(~party, scales = "free") +
     coord_flip() +
     ggthemes::theme_hc() +
     # scale_fill_manual(values = c("#ef3e3e", "#0039aa", "#0a6be1")) +
@@ -2957,20 +2959,20 @@ lazio30 %>%
 
 
 
-```{r, fig.width= 8, fig.height=5, dpi = 300}
+```{r, fig.width= 10, fig.height=9, dpi = 300}
 
 lazio7 %>% 
     group_split(party, election) %>% 
     map_dfr(calc_jobs_perc) %>% 
     filter(perc >= 0.015) %>% 
-    filter(str_detect(value, "Relationship|Parents|Partner|Separated|Divorced|Single|Complicated", negate = T)) %>% 
+    filter(str_detect(value, relationshipstuff, negate = T)) %>% 
      # mutate(coalition = fct_relevel(coalition, c("Coalizione di centro-sinistra",
      #                              "Terzo Polo",
      #                              "Coalizione di centro-destra"))) %>% 
     mutate(value = fct_reorder(value, perc)) %>% 
     ggplot(aes(value, perc, fill = party)) +
     geom_col(alpha = 0.8) +
-    facet_wrap(~party) +
+    facet_wrap(~party, scales = "free") +
     coord_flip() +
     ggthemes::theme_hc() +
     # scale_fill_manual(values = c("#ef3e3e", "#0039aa", "#0a6be1")) +
@@ -2987,3 +2989,5 @@ lazio7 %>%
     scale_fill_parties() +
     scale_x_discrete(label = function(x) stringr::str_trunc(x, 22))
 ```
+
+
