@@ -136,12 +136,14 @@ scraper <- function(.x, timeframe = "7") {
 
 # scraper <- possibly(scraper, otherwise = NULL, quiet = F)
 
+# get_targeting("127104351269409", timeframe = "LAST_7_DAYS")
 
 ### save seperately
-yo <- lab_dat %>% #count(cntry, sort  =T) %>%
-    # filter(!(page_id %in% already_there)) %>%
-    # filter(cntry == "GB") %>%
-    # slice(1:10) %>%
+yo <- lab_dat %>%
+    distinct(page_id, .keep_all = T) %>%
+    # filter(page_id ==  "81698998693") %>%
+    mutate(page_id = ifelse(str_detect(page_name, "Francesca De Vito"), "1962271387367370", page_id)) %>%
+    # filter(!(page_id %in% these_are_here$internal_id)) %>%
     filter(!(page_id %in% these_are_here_too$internal_id)) %>%
     split(1:nrow(.)) %>%
     map_dfr_progress(~{scraper(.x, "7")})

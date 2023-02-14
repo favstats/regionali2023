@@ -81,8 +81,8 @@ main30 <- election_dat30 %>%
     filter(election == "Main party" | election == "Main party")
 
 
-last7days_string <- "3 febbraio - 9 febbraio 2023"
-last30days_string <- "11 gennaio - 9 febbraio 2023"
+last7days_string <- "5 febbraio - 11 febbraio 2023"
+last30days_string <- "13 gennaio - 11 febbraio 2023"
 
 # election_dat30 %>% 
     
@@ -90,6 +90,15 @@ last30days_string <- "11 gennaio - 9 febbraio 2023"
 #     filter(page_name == "Giancarlo Righini") %>%
 #     count(value, sort = T)
 #     count(page_name, sort = T)
+
+# election_dat30 %>%
+#     filter(party == "Noi moderati e Rinascimento")
+#     count(party, sort = T)
+#     
+# dir("9th/30", full.names = T) %>% 
+#     map_dfr(readRDS) %>%
+#     left_join(lab_dat %>% rename(internal_id = page_id)) %>% 
+#     filter(party == "Noi moderati e Rinascimento")
 ```
 
 ```{r}
@@ -491,7 +500,7 @@ get_table_dat(lombardy30, party) %>%
     add_ribbons("Moratti Presidente", "#0a7d98") %>% 
     add_ribbons("M5S", "#fff44f") %>% 
     add_ribbons("Verdi-Sinistra", "#bd3758") %>% 
-    add_ribbons("Noi moderati e Rinascimento", "#5683b3") %>% 
+    # add_ribbons("Noi moderati e Rinascimento", "#5683b3") %>% 
   tab_style(
     style = cell_borders(
       sides = c("bottom"),
@@ -539,7 +548,7 @@ get_table_dat(lombardy7, party) %>%
     add_ribbons("Moratti Presidente", "#0a7d98") %>% 
     add_ribbons("M5S", "#fff44f") %>% 
     add_ribbons("Verdi-Sinistra", "#bd3758") %>% 
-    add_ribbons("Noi moderati e Rinascimento", "#5683b3") %>% 
+    # add_ribbons("Noi moderati e Rinascimento", "#5683b3") %>% 
   tab_style(
     style = cell_borders(
       sides = c("bottom"),
@@ -2189,10 +2198,9 @@ gender_targeting %>%
 
 ## Educazione
 
-### Elezioni regionali in Lombardia  {.tabset .tabset-fade .tabset-pills}
+### Elezioni regionali in Lombardia {.tabset .tabset-fade .tabset-pills}
 
-
-#### Per Coalizione  {.tabset .tabset-fade .tabset-pills}
+#### Per Coalizione {.tabset .tabset-fade .tabset-pills}
 
 ##### `r last30days_string` (Ultimi 30 giorni)
 
