@@ -163,16 +163,28 @@ these_are_here <- last30days %>%
 these_are_here_too <- last7days %>%
     distinct(internal_id)
 
+lab_dat <- readRDS("data/lab_dat.rds")
+
+fixed_lab_dat <- lab_dat %>%
+    # count(page_name, party, sort = T)  %>%
+    mutate(coalition = str_replace(coalition, "Movimente", "Movimento")) %>%
+    mutate(party = ifelse(str_detect(page_name, "Giancarlo Righini"),
+                          "FdI",
+                          party)) %>%
+    distinct(page_id, .keep_all = T)
 
 election_dat7 <- last7days %>%
-    left_join(lab_dat %>% rename(internal_id = page_id))  %>%
+    left_join(fixed_lab_dat %>% rename(internal_id = page_id))  %>%
     mutate(total_spend_formatted = parse_number(total_spend_formatted)) %>%
     mutate(election = ifelse(election == "Lombardy", "Lombardia", election))
+
+# election_dat7 %>%
+#     filter(str_detect(page_name, "Giancarlo Righini")) %>% View
 
 saveRDS(election_dat7, "data/election_dat7.rds")
 
 election_dat30 <- last30days %>%
-    left_join(lab_dat %>% rename(internal_id = page_id))  %>%
+    left_join(fixed_lab_dat %>% rename(internal_id = page_id))  %>%
     mutate(total_spend_formatted = parse_number(total_spend_formatted)) %>%
     mutate(election = ifelse(election == "Lombardy", "Lombardia", election))
 

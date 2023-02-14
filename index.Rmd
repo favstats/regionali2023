@@ -1,7 +1,7 @@
 ---
 title: "Elezioni regionali in Lombardia e Lazio del 2023"
 subtitle: "How Do Political Campaigns Target Voters?"
-author: "Fabio Votta (@favstats)"
+author: "Fabio Votta - @favstats"
 date: "`r Sys.Date()`"
 output:
   rmdformats::robobook:
@@ -45,12 +45,19 @@ options(scipen = 999)
 
 ```{r}
 
+lab_dat <- readRDS("data/lab_dat.rds")
+
+
+
 election_dat30 <- readRDS("data/election_dat30.rds") %>% 
-    filter(party != "Unione Popolare") %>% 
-    mutate(coalition = str_replace(coalition, "Movimente", "Movimento"))
+    filter(party != "Unione Popolare") 
+
 election_dat7 <- readRDS("data/election_dat7.rds") %>% 
-    filter(party != "Unione Popolare") %>% 
-    mutate(coalition = str_replace(coalition, "Movimente", "Movimento"))
+    filter(party != "Unione Popolare") 
+
+# election_dat7 %>% 
+#     count(party, page_name) %>% 
+#     count(page_name, sort = T)
 
 lazio7 <- election_dat7 %>% 
     filter(election == "Lazio")
@@ -65,7 +72,6 @@ lazio30 <- election_dat30 %>%
 lombardy30 <- election_dat30 %>% 
     filter(election == "Lombardia")
 
-lab_dat <- readRDS("data/lab_dat.rds")
 
 main7 <- election_dat7 %>% 
     filter(election == "Main party" | election == "Main party")
@@ -77,6 +83,13 @@ main30 <- election_dat30 %>%
 
 last7days_string <- "3 febbraio - 9 febbraio 2023"
 last30days_string <- "11 gennaio - 9 febbraio 2023"
+
+# election_dat30 %>% 
+    
+# lazio7 %>% 
+#     filter(page_name == "Giancarlo Righini") %>%
+#     count(value, sort = T)
+#     count(page_name, sort = T)
 ```
 
 ```{r}
@@ -1575,7 +1588,6 @@ get_contested_graph(lombardy7, c("Coalizione di centro-sinistra", "Coalizione di
 get_contested_graph(lazio30, c("Coalizione di centro-sinistra", "Coalizione Movimento 5 Stelle", "Coalizione di centro-destra") %>% rev,
                     c("#ef3e3e", "#fff44f", "#0a6be1") %>% rev)
 
-   
 ```
 
 
@@ -1587,31 +1599,982 @@ get_contested_graph(lazio7, c("Coalizione di centro-sinistra", "Coalizione Movim
                     c("#ef3e3e", "#fff44f", "#0a6be1") %>% rev)
 ```
 
-## Rest
+
+## Targeting di Etá {.tabset .tabset-fade .tabset-pills}
+
+### Elezioni regionali in Lombardia  {.tabset .tabset-fade .tabset-pills}
 
 
-```{r, eval = F}
-interest_targeting %>% 
-  filter(is_exclusion) %>% 
-  # filter(is.na(page_id)) %>% 
-  mutate(value = str_remove_all(value, "INTERESTS: |DEMOGRAPHICS: |BEHAVIORS: ")) %>% 
-  mutate(value = str_trunc(value, 30)) %>% 
-  group_by(coalition)  %>% 
+#### Per Coalizione  {.tabset .tabset-fade .tabset-pills}
+
+##### `r last30days_string` (Ultimi 30 giorni)
+
+```{r, fig.width= 8, fig.height=5, dpi = 300}
+get_targ_perc <- function(x, var) {
+    
+x <<- x
+total_sppppeen <- x %>% 
+# filter(coalition == "Coalizione di centro-destra") %>% 
+  mutate(total_spend = total_spend_formatted) %>%
+  distinct(internal_id, .keep_all = T)  %>%
+  # mutate(total_spend = readr::parse_number(total_spend_formatted)) %>%
+  mutate(total_spend = ifelse(total_spend == 100, 1, total_spend)) %>% 
+  select(internal_id, total_spend) %>% 
   arrange(desc(total_spend)) %>% 
-  distinct(value, .keep_all = T) %>% 
-  slice(1:20)  %>%
-  ungroup() %>% 
-  mutate(value = fct_reorder(value, total_spend)) %>% 
-  ggplot(aes(value, total_spend, fill = coalition)) +
-  geom_col() +
-  facet_wrap(~coalition, scales = "free") +
-  coord_flip()  +
-  # scale_fill_manual("Page Groups", values = c("#008fd5", "#ff2700")) +
-  ggthemes::theme_hc() +
-  theme(legend.position = "none") +
-  scale_y_continuous(labels = scales::comma) +
-  labs(x = "Interest Exlcusion", y = "\nTotal spent on ads that exclude audience (in $)", 
-       caption = "Source: Meta Ad Library and data compiled by Who Targets Me. Data Viz: Fabio Votta (@favstats).") +
-	scale_y_continuous(labels = scales::label_number(suffix = "k", scale = 1e-3)) 
+  summarize(total_budget = sum(total_spend)) %>% 
+  ungroup()
+
+
+x %>% 
+  mutate(total_spend = total_spend_formatted) %>%
+  mutate(total_spend = ifelse(total_spend == 100, 1, total_spend)) %>% 
+  # filter(coalition == "Coalizione di centro-destra") %>%  
+  filter(type == var) %>%   
+  # filter(total_spend_pct != 0) %>% 
+  # group_by(internal_id) %>%
+  # mutate(n_ages = n()) %>% #count(n_ages, sort = T)
+  # ungroup()%>% 
+  mutate(spend_per = total_spend * total_spend_pct) %>% 
+  group_by(value) %>% 
+  summarize(spend_per = sum(spend_per)) %>% 
+  bind_cols(total_sppppeen) %>% 
+  mutate(perc = spend_per/total_budget) %>% 
+            mutate(coalition = x$coalition[1],
+                   party = x$party[1],
+                   election = x$election[1])
+    
+}
+
+
+age_targeting <- lombardy30 %>% 
+    group_split(coalition, election) %>% 
+    map_dfr(get_targ_perc, "age")
+    
+# age_targeting %>% 
+#      mutate(coalition = fct_relevel(coalition, c("Coalizione di centro-sinistra",
+#                                   "Coalizione di centro",
+#                                   "Coalizione di centro-destra"))) %>% 
+#     filter(!(value %in% 13:17)) %>% 
+#     ggplot(aes(value, perc, fill = coalition)) +
+#     geom_col() +
+#     facet_wrap(~coalition) +
+#     ggthemes::theme_hc() +
+#     scale_fill_manual(values = c("#ef3e3e", "#0039aa", "#0a6be1")) +
+#     theme(legend.position = "none") +
+#     scale_y_continuous(labels = scales::percent) +
+#     scale_x_discrete(breaks = c("18", "24",
+#                                 "34", "44",
+#                                 "54", "65+")) +
+#     labs(y = "% Budget Spend on Age")
+
+
+# lombardy30 %>% 
+#     group_split(coalition, election) %>% 
+#     map_dfr(get_targ_perc, "age")
+    
+age_targeting %>% 
+     mutate(coalition = fct_relevel(coalition, c("Coalizione di centro-sinistra",
+                                  "Coalizione di centro",
+                                  "Coalizione di centro-destra"))) %>% 
+    filter(!(value %in% 13:17)) %>% 
+    mutate(age_groups = case_when(
+        value %in% 18:24 ~ "18-24",
+        value %in% 25:34 ~ "25-34",
+        value %in% 35:44 ~ "35-44",
+        value %in% 45:54 ~ "45-54",
+        value %in% 55:64 ~ "55-64",
+        T ~ value
+    )) %>% 
+    group_by(age_groups, coalition) %>%
+    summarize(spend_per = mean(spend_per),
+              total_budget = unique(total_budget))  %>% 
+  mutate(perc = spend_per/total_budget)  %>% 
+    mutate(age_groups = factor(age_groups,
+                               c("18-24",
+                                 "25-34",
+                                 "35-44",
+                                 "45-54",
+                                 "55-64", "65+") %>% rev)) %>% 
+    ggplot(aes(age_groups, perc, fill = coalition)) +
+    geom_col(width = 0.5) +
+    facet_wrap(~coalition) +
+    ggthemes::theme_hc() +
+    scale_fill_manual(values = c("#ef3e3e", "#0039aa", "#0a6be1")) +
+    theme(legend.position = "none",
+          panel.spacing=unit(1,"lines")) +
+    scale_y_continuous(labels = scales::percent) +
+    # scale_x_discrete(breaks = c("18", "24",
+    #                             "34", "44",
+    #                             "54", "65+")) +
+    labs(y = "% Budget Spend on Age Group") +
+    coord_flip() +
+    labs(x = "Age Groups\n")  +
+  geom_text(size = 3.5, color = "white",
+             aes(y = perc - 0.19, label = paste0(round(perc*100, 1), "%")))
+    
 ```
 
+
+##### `r last7days_string` (Ultimi 7 giorni)
+
+```{r, fig.width= 8, fig.height=5, dpi = 300}
+
+
+age_targeting7 <- lombardy7 %>% 
+    group_split(coalition, election) %>% 
+    map_dfr(get_targ_perc, "age")
+    
+age_targeting7 %>% 
+     mutate(coalition = fct_relevel(coalition, c("Coalizione di centro-sinistra",
+                                  "Coalizione di centro",
+                                  "Coalizione di centro-destra"))) %>% 
+    filter(!(value %in% 13:17)) %>% 
+    mutate(age_groups = case_when(
+        value %in% 18:24 ~ "18-24",
+        value %in% 25:34 ~ "25-34",
+        value %in% 35:44 ~ "35-44",
+        value %in% 45:54 ~ "45-54",
+        value %in% 55:64 ~ "55-64",
+        T ~ value
+    )) %>% 
+    group_by(age_groups, coalition) %>%
+    summarize(spend_per = mean(spend_per),
+              total_budget = unique(total_budget))  %>% 
+    mutate(age_groups = factor(age_groups,
+                               c("18-24",
+                                 "25-34",
+                                 "35-44",
+                                 "45-54",
+                                 "55-64", "65+") %>% rev)) %>% 
+  mutate(perc = spend_per/total_budget)  %>% 
+    ggplot(aes(age_groups, perc, fill = coalition)) +
+    geom_col(width = 0.5) +
+    facet_wrap(~coalition) +
+    ggthemes::theme_hc() +
+    scale_fill_manual(values = c("#ef3e3e", "#0039aa", "#0a6be1")) +
+    theme(legend.position = "none",
+          panel.spacing=unit(1,"lines")) +
+    scale_y_continuous(labels = scales::percent) +
+    # scale_x_discrete(breaks = c("18", "24",
+    #                             "34", "44",
+    #                             "54", "65+")) +
+    labs(y = "% Budget Spend on Age Group") +
+    coord_flip() +
+    labs(x = "Age Groups\n")  +
+  geom_text(size = 3.5, color = "white",
+             aes(y = perc - 0.19, label = paste0(round(perc*100, 1), "%")))
+    
+```
+
+#### Per Partito  {.tabset .tabset-fade .tabset-pills}
+
+##### `r last30days_string` (Ultimi 30 giorni)
+
+
+##### `r last7days_string` (Ultimi 7 giorni)
+
+### Elezioni regionali in Lazio  {.tabset .tabset-fade .tabset-pills}
+
+
+#### Per Coalizione  {.tabset .tabset-fade .tabset-pills}
+
+##### `r last30days_string` (Ultimi 30 giorni)
+
+```{r, fig.width= 8, fig.height=5, dpi = 300}
+
+# debugonce(get_age_perc)
+age_targeting <- lazio30 %>% 
+    group_split(coalition, election) %>% 
+    map_dfr(get_targ_perc, "age")
+    
+   
+age_targeting %>% 
+     mutate(coalition = fct_relevel(coalition, c("Coalizione di centro-sinistra",
+                                  "Coalizione Movimento 5 Stelle",
+                                  "Coalizione di centro-destra"))) %>% 
+    filter(!(value %in% 13:17)) %>% 
+    mutate(age_groups = case_when(
+        value %in% 18:24 ~ "18-24",
+        value %in% 25:34 ~ "25-34",
+        value %in% 35:44 ~ "35-44",
+        value %in% 45:54 ~ "45-54",
+        value %in% 55:64 ~ "55-64",
+        T ~ value
+    )) %>% 
+    group_by(age_groups, coalition) %>%
+    summarize(spend_per = mean(spend_per),
+              total_budget = unique(total_budget))  %>% 
+  mutate(perc = spend_per/total_budget)  %>% 
+        mutate(age_groups = factor(age_groups,
+                               c("18-24",
+                                 "25-34",
+                                 "35-44",
+                                 "45-54",
+                                 "55-64", "65+") %>% rev)) %>% 
+    ggplot(aes(age_groups, perc, fill = coalition)) +
+    geom_col(width = 0.5) +
+    facet_wrap(~coalition) +
+    ggthemes::theme_hc() +
+    scale_fill_manual(values = c("#ef3e3e", "#fff44f", "#0a6be1")) +
+    theme(legend.position = "none",
+          panel.spacing=unit(1,"lines")) +
+    scale_y_continuous(labels = scales::percent) +
+    # scale_x_discrete(breaks = c("18", "24",
+    #                             "34", "44",
+    #                             "54", "65+")) +
+    labs(y = "% Budget Spend on Age Group") +
+    coord_flip() +
+    labs(x = "Age Groups\n")  +
+  geom_text(size = 3.5, 
+             aes(color = coalition, y = perc - 0.19, label = paste0(round(perc*100, 1), "%"))) +
+    scale_color_manual(values = c("white", "black", "white"))
+    
+```
+
+
+
+##### `r last7days_string` (Ultimi 7 giorni)
+
+```{r, fig.width= 8, fig.height=5, dpi = 300}
+
+# debugonce(get_age_perc)
+age_targeting7 <- lazio7 %>% 
+    group_split(coalition, election) %>% 
+    map_dfr(get_targ_perc, "age")
+    
+   
+age_targeting7 %>% 
+     mutate(coalition = fct_relevel(coalition, c("Coalizione di centro-sinistra",
+                                  "Coalizione Movimento 5 Stelle",
+                                  "Coalizione di centro-destra"))) %>% 
+    filter(!(value %in% 13:17)) %>% 
+    mutate(age_groups = case_when(
+        value %in% 18:24 ~ "18-24",
+        value %in% 25:34 ~ "25-34",
+        value %in% 35:44 ~ "35-44",
+        value %in% 45:54 ~ "45-54",
+        value %in% 55:64 ~ "55-64",
+        T ~ value
+    )) %>% 
+    group_by(age_groups, coalition) %>%
+    summarize(spend_per = mean(spend_per),
+              total_budget = unique(total_budget))  %>% 
+  mutate(perc = spend_per/total_budget)  %>% 
+        mutate(age_groups = factor(age_groups,
+                               c("18-24",
+                                 "25-34",
+                                 "35-44",
+                                 "45-54",
+                                 "55-64", "65+") %>% rev)) %>% 
+    ggplot(aes(age_groups, perc, fill = coalition)) +
+    geom_col(width = 0.5) +
+    facet_wrap(~coalition) +
+    ggthemes::theme_hc() +
+    scale_fill_manual(values = c("#ef3e3e", "#fff44f", "#0a6be1")) +
+    theme(legend.position = "none",
+          panel.spacing=unit(1,"lines")) +
+    scale_y_continuous(labels = scales::percent) +
+    # scale_x_discrete(breaks = c("18", "24",
+    #                             "34", "44",
+    #                             "54", "65+")) +
+    labs(y = "% Budget Spend on Age Group") +
+    coord_flip() +
+    labs(x = "Age Groups\n")   +
+  geom_text(size = 3.5, 
+             aes(color = coalition, y = perc - 0.19, label = paste0(round(perc*100, 1), "%"))) +
+    scale_color_manual(values = c("white", "black", "white"))
+#     
+# x %>% 
+#     filter(type == "age") %>% 
+#     count(page_name, value, sort = T)
+# 
+# total_sppppeen <- x %>% 
+# # filter(coalition == "Coalizione di centro-destra") %>% 
+#   mutate(total_spend = total_spend_formatted) %>%
+#   distinct(internal_id, .keep_all = T)  %>%
+#   # mutate(total_spend = readr::parse_number(total_spend_formatted)) %>%
+#   mutate(total_spend = ifelse(total_spend == 100, 1, total_spend)) %>% 
+#   select(internal_id, total_spend) %>% 
+#   arrange(desc(total_spend)) %>% 
+#   summarize(total_budget = sum(total_spend)) %>% 
+#   ungroup()
+# 
+# 
+# x %>% 
+#   mutate(total_spend = total_spend_formatted) %>%
+#   mutate(total_spend = ifelse(total_spend == 100, 1, total_spend)) %>% 
+#   # filter(coalition == "Coalizione di centro-destra") %>%  
+#   filter(type == "age") %>%   
+#   # filter(total_spend_pct != 0) %>% 
+#   group_by(internal_id) %>%
+#   mutate(n_ages = n()) %>% #count(n_ages, sort = T)
+#   ungroup()%>% 
+#   mutate(spend_per = total_spend * total_spend_pct) %>% 
+#   group_by(value) %>% 
+#   summarize(spend_per = sum(spend_per)) %>% 
+#   bind_cols(total_sppppeen) %>% 
+#   mutate(perc = spend_per/total_budget) %>% 
+#             mutate(coalition = x$coalition[1],
+#                    party = x$party[1],
+#                    election = x$election[1])
+#     
+# x %>%
+#     filter(value == "25") %>% 
+#     distinct(internal_id, .keep_all = T) %>% 
+#   mutate(total_spend = ifelse(total_spend_formatted == 100, 1, total_spend_formatted)) %>% 
+#   mutate(spend_per = total_spend * total_spend_pct) %>% 
+#     mutate(tottaaal = sum(spend_per))  %>% 
+#     select(tottaaal, spend_per, total_spend, total_spend_pct, everything()) 
+```
+
+#### Per Partito  {.tabset .tabset-fade .tabset-pills}
+
+##### `r last30days_string` (Ultimi 30 giorni)
+
+
+##### `r last7days_string` (Ultimi 7 giorni)
+
+## Targeting di Gender {.tabset .tabset-fade .tabset-pills}
+
+### Elezioni regionali in Lombardia  {.tabset .tabset-fade .tabset-pills}
+
+
+#### Per Coalizione  {.tabset .tabset-fade .tabset-pills}
+
+##### `r last30days_string` (Ultimi 30 giorni)
+
+```{r, fig.width= 8, fig.height=5, dpi = 300}
+
+
+gender_targeting <- lombardy30 %>% 
+group_split(coalition, election) %>% 
+map_dfr(get_targ_perc, "gender")
+
+gender_targeting %>% 
+     mutate(coalition = fct_relevel(coalition, c("Coalizione di centro-sinistra",
+                                  "Coalizione di centro",
+                                  "Coalizione di centro-destra"))) %>% 
+    filter(!(value %in% "All")) %>% 
+    ggplot(aes(value, perc)) +
+    geom_col(width = 0.5, aes(fill = coalition)) +
+    facet_wrap(~coalition) +
+    ggthemes::theme_hc() +
+    scale_fill_manual(values = c("#ef3e3e", "#0039aa", "#0a6be1")) +
+    theme(legend.position = "none",
+          panel.spacing=unit(1,"lines")) +
+    scale_y_continuous(labels = scales::percent) +
+    # scale_x_discrete(breaks = c("18", "24",
+    #                             "34", "44",
+    #                             "54", "65+")) +
+    labs(y = "% Budget Spend on Age Group") +
+    coord_flip() +
+    labs(x = "Age Groups\n")  +
+  geom_label(size = 3.5, color = "black",
+             aes(y = perc, label = paste0(round(perc*100, 2), "%")))
+    
+```
+
+##### `r last7days_string` (Ultimi 7 giorni)
+
+```{r}
+
+gender_targeting <- lombardy7 %>% 
+group_split(coalition, election) %>% 
+map_dfr(get_targ_perc, "gender")
+
+gender_targeting %>% 
+     mutate(coalition = fct_relevel(coalition, c("Coalizione di centro-sinistra",
+                                  "Coalizione di centro",
+                                  "Coalizione di centro-destra"))) %>% 
+    filter(!(value %in% "All")) %>% 
+    ggplot(aes(value, perc)) +
+    geom_col(width = 0.5, aes(fill = coalition)) +
+    facet_wrap(~coalition) +
+    ggthemes::theme_hc() +
+    scale_fill_manual(values = c("#ef3e3e", "#0039aa", "#0a6be1")) +
+    theme(legend.position = "none",
+          panel.spacing=unit(1,"lines")) +
+    scale_y_continuous(labels = scales::percent) +
+    # scale_x_discrete(breaks = c("18", "24",
+    #                             "34", "44",
+    #                             "54", "65+")) +
+    labs(y = "% Budget Spend on Age Group") +
+    coord_flip() +
+    labs(x = "Age Groups\n")  +
+  geom_label(size = 3.5, color = "black",
+             aes(y = perc, label = paste0(round(perc*100, 2), "%")))
+    
+```
+
+
+#### Per Partito {.tabset .tabset-fade .tabset-pills}
+
+
+##### `r last30days_string` (Ultimi 30 giorni)
+
+```{r, fig.width= 8, fig.height=5, dpi = 300}
+
+gender_targeting <- lombardy30 %>% 
+group_split(party, election) %>% 
+map_dfr(get_targ_perc, "gender")
+
+gender_targeting %>% 
+    filter(value != "All") %>%
+    # filter(value == "Women") %>% 
+    arrange(desc(perc)) %>% 
+    mutate(party = fct_reorder(party, perc)) %>% 
+    ggplot(aes(party, perc)) +
+    geom_col(width = 0.5, aes(fill = coalition)) +
+    facet_wrap(~value) +
+    ggthemes::theme_hc() +
+    # scale_fill_manual(values = c("#ef3e3e", "#0039aa", "#0a6be1")) +
+    theme(legend.position = "none",
+          panel.spacing=unit(1,"lines")) +
+    scale_y_continuous(labels = scales::percent) +
+    # scale_x_discrete(breaks = c("18", "24",
+    #                             "34", "44",
+    #                             "54", "65+")) +
+    labs(y = "% Budget Spend on Gender") +
+    coord_flip() +
+    labs(x = "Gender\n")  +
+  geom_text(size = 3.5, color = "black",
+             aes(y = perc, label = paste0(round(perc*100, 2), "%")))
+    
+```
+
+
+
+##### `r last7days_string` (Ultimi 7 giorni)
+
+```{r}
+gender_targeting <- lombardy7 %>% 
+group_split(party, election) %>% 
+map_dfr(get_targ_perc, "gender")
+
+gender_targeting %>% 
+    filter(value != "All") %>%
+    # filter(value == "Women") %>% 
+    arrange(desc(perc)) %>% 
+    mutate(party = fct_reorder(party, perc)) %>% 
+    ggplot(aes(party, perc)) +
+    geom_col(width = 0.5, aes(fill = coalition)) +
+    facet_wrap(~value) +
+    ggthemes::theme_hc() +
+    # scale_fill_manual(values = c("#ef3e3e", "#0039aa", "#0a6be1")) +
+    theme(legend.position = "none",
+          panel.spacing=unit(1,"lines")) +
+    scale_y_continuous(labels = scales::percent) +
+    # scale_x_discrete(breaks = c("18", "24",
+    #                             "34", "44",
+    #                             "54", "65+")) +
+    labs(y = "% Budget Spend on Gender") +
+    coord_flip() +
+    labs(x = "Gender\n")  +
+  geom_text(size = 3.5, color = "black",
+             aes(y = perc, label = paste0(round(perc*100, 2), "%")))
+    
+```
+
+
+### Elezioni regionali in Lazio  {.tabset .tabset-fade .tabset-pills}
+
+
+#### Per Coalizione  {.tabset .tabset-fade .tabset-pills}
+
+##### `r last30days_string` (Ultimi 30 giorni)
+
+```{r}
+
+gender_targeting <- lazio30 %>% 
+group_split(coalition, election) %>% 
+map_dfr(get_targ_perc, "gender")
+
+gender_targeting %>% 
+     mutate(coalition = fct_relevel(coalition, c("Coalizione di centro-sinistra",
+                                  "Coalizione di centro",
+                                  "Coalizione di centro-destra"))) %>% 
+    filter(!(value %in% "All")) %>% 
+    ggplot(aes(value, perc)) +
+    geom_col(width = 0.5, aes(fill = coalition)) +
+    facet_wrap(~coalition) +
+    ggthemes::theme_hc() +
+    scale_fill_manual(values = c("#ef3e3e", "#0039aa", "#0a6be1")) +
+    theme(legend.position = "none",
+          panel.spacing=unit(1,"lines")) +
+    scale_y_continuous(labels = scales::percent) +
+    # scale_x_discrete(breaks = c("18", "24",
+    #                             "34", "44",
+    #                             "54", "65+")) +
+    labs(y = "% Budget Spend on Gender") +
+    coord_flip() +
+    labs(x = "Gender\n")  +
+  geom_label(size = 3.5, color = "black",
+             aes(y = perc, label = paste0(round(perc*100, 2), "%")))
+    
+```
+
+
+##### `r last7days_string` (Ultimi 7 giorni)
+
+```{r}
+
+gender_targeting <- lazio7 %>% 
+group_split(coalition, election) %>% 
+map_dfr(get_targ_perc, "gender")
+
+gender_targeting %>% 
+     mutate(coalition = fct_relevel(coalition, c("Coalizione di centro-sinistra",
+                                  "Coalizione di centro",
+                                  "Coalizione di centro-destra"))) %>% 
+    filter(!(value %in% "All")) %>% 
+    ggplot(aes(value, perc)) +
+    geom_col(width = 0.5, aes(fill = coalition)) +
+    facet_wrap(~coalition) +
+    ggthemes::theme_hc() +
+    scale_fill_manual(values = c("#ef3e3e", "#0039aa", "#0a6be1")) +
+    theme(legend.position = "none",
+          panel.spacing=unit(1,"lines")) +
+    scale_y_continuous(labels = scales::percent) +
+    # scale_x_discrete(breaks = c("18", "24",
+    #                             "34", "44",
+    #                             "54", "65+")) +
+    labs(y = "% Budget Spend on Gender") +
+    coord_flip() +
+    labs(x = "Gender\n")  +
+  geom_label(size = 3.5, color = "black",
+             aes(y = perc, label = paste0(round(perc*100, 2), "%")))
+    
+```
+
+
+#### Per Partito {.tabset .tabset-fade .tabset-pills}
+
+
+##### `r last30days_string` (Ultimi 30 giorni)
+
+```{r, fig.width= 8, fig.height=5, dpi = 300}
+
+gender_targeting <- lombardy30 %>% 
+group_split(party, election) %>% 
+map_dfr(get_targ_perc, "gender")
+
+gender_targeting %>% 
+    filter(value != "All") %>%
+    # filter(value == "Women") %>% 
+    arrange(desc(perc)) %>% 
+    mutate(party = fct_reorder(party, perc)) %>% 
+    ggplot(aes(party, perc)) +
+    geom_col(width = 0.5, aes(fill = coalition)) +
+    facet_wrap(~value) +
+    ggthemes::theme_hc() +
+    # scale_fill_manual(values = c("#ef3e3e", "#0039aa", "#0a6be1")) +
+    theme(legend.position = "none",
+          panel.spacing=unit(1,"lines")) +
+    scale_y_continuous(labels = scales::percent) +
+    # scale_x_discrete(breaks = c("18", "24",
+    #                             "34", "44",
+    #                             "54", "65+")) +
+    labs(y = "% Budget Spend on Gender") +
+    coord_flip() +
+    labs(x = "Gender\n")  +
+  geom_text(size = 3.5, color = "black",
+             aes(y = perc, label = paste0(round(perc*100, 2), "%")))
+    
+```
+
+
+
+##### `r last7days_string` (Ultimi 7 giorni)
+
+
+## Educazione
+
+### Elezioni regionali in Lombardia  {.tabset .tabset-fade .tabset-pills}
+
+
+#### Per Coalizione  {.tabset .tabset-fade .tabset-pills}
+
+##### `r last30days_string` (Ultimi 30 giorni)
+
+```{r, fig.width= 8, fig.height=5, dpi = 300}
+
+
+calc_edu_perc <- function(x) {
+    
+total_sppppeen <- x %>% 
+# filter(coalition == "Coalizione di centro-destra") %>% 
+  mutate(total_spend = total_spend_formatted) %>%
+  distinct(internal_id, .keep_all = T)  %>%
+  # mutate(total_spend = readr::parse_number(total_spend_formatted)) %>%
+  mutate(total_spend = ifelse(total_spend == 100, 1, total_spend)) %>% 
+  select(internal_id, total_spend) %>% 
+  arrange(desc(total_spend)) %>% 
+  summarize(total_budget = sum(total_spend)) %>% 
+  ungroup()
+
+x %>% 
+    filter(type == "detailed") %>%
+    filter(detailed_type == "DEMOGRAPHICS") %>% 
+    # count(value, sort = T) %>% 
+    filter(str_detect(value, "grad school|degree|	|Master|[c|C]ollege|degree|[H|h]igh school|Professional degree")) %>% 
+    filter(str_detect(value, "Wine", negate = T)) %>% 
+  mutate(total_spend = total_spend_formatted) %>%
+  mutate(total_spend = ifelse(total_spend == 100, 1, total_spend)) %>% 
+  # filter(coalition == "Coalizione di centro-destra") %>%  
+  # filter(total_spend_pct != 0) %>% 
+  # group_by(internal_id) %>%
+  # mutate(n_ages = n()) %>% #count(n_ages, sort = T)
+  # ungroup()%>% 
+  mutate(spend_per = total_spend * total_spend_pct) %>% 
+  group_by(value) %>% 
+  summarize(spend_per = sum(spend_per)) %>% 
+  bind_cols(total_sppppeen) %>% 
+  mutate(perc = spend_per/total_budget) %>% 
+            mutate(coalition = x$coalition[1],
+                   party = x$party[1],
+                   election = x$election[1])
+}
+
+lombardy30 %>% 
+    group_split(coalition, election) %>% 
+    map_dfr(calc_edu_perc) %>% 
+     mutate(coalition = fct_relevel(coalition, c("Coalizione di centro-sinistra",
+                                  "Coalizione di centro",
+                                  "Coalizione di centro-destra"))) %>% 
+    mutate(value = fct_reorder(value, perc)) %>% 
+    ggplot(aes(value, perc, fill = coalition)) +
+    geom_col(alpha = 0.8) +
+    facet_wrap(~coalition) +
+    coord_flip() +
+    ggthemes::theme_hc() +
+    scale_fill_manual(values = c("#ef3e3e", "#0039aa", "#0a6be1")) +
+    theme(legend.position = "none",
+          panel.spacing=unit(1,"lines")) +
+    scale_y_continuous(labels = scales::percent) +
+    # scale_x_discrete(breaks = c("18", "24",
+    #                             "34", "44",
+    #                             "54", "65+")) +
+    labs(y = "% Budget Spend on Education") +
+    labs(x = "Education\n")  +
+  geom_text(size = 3.5, color = "black",
+             aes(y = perc, label = paste0(round(perc*100, 1), "%")))
+    
+
+
+    
+```
+
+##### `r last7days_string` (Ultimi 7 giorni)
+
+```{r, fig.width= 8, fig.height=5, dpi = 300}
+
+lombardy7 %>% 
+    group_split(coalition, election) %>% 
+    map_dfr(calc_edu_perc) %>% 
+     mutate(coalition = fct_relevel(coalition, c("Coalizione di centro-sinistra",
+                                  "Coalizione di centro",
+                                  "Coalizione di centro-destra"))) %>% 
+    mutate(value = fct_reorder(value, perc)) %>% 
+    ggplot(aes(value, perc, fill = coalition)) +
+    geom_col(alpha = 0.8) +
+    facet_wrap(~coalition) +
+    coord_flip() +
+    ggthemes::theme_hc() +
+    scale_fill_manual(values = c("#ef3e3e", "#0039aa", "#0a6be1")) +
+    theme(legend.position = "none",
+          panel.spacing=unit(1,"lines")) +
+    scale_y_continuous(labels = scales::percent) +
+    # scale_x_discrete(breaks = c("18", "24",
+    #                             "34", "44",
+    #                             "54", "65+")) +
+    labs(y = "% Budget Spend on Education") +
+    labs(x = "Education\n")  +
+  geom_text(size = 3.5, color = "black",
+             aes(y = perc, label = paste0(round(perc*100, 1), "%")))
+    
+
+
+```
+
+#### Per Partito  {.tabset .tabset-fade .tabset-pills}
+
+##### `r last30days_string` (Ultimi 30 giorni)
+
+
+##### `r last7days_string` (Ultimi 7 giorni)
+
+### Elezioni regionali in Lazio  {.tabset .tabset-fade .tabset-pills}
+
+
+#### Per Coalizione  {.tabset .tabset-fade .tabset-pills}
+
+##### `r last30days_string` (Ultimi 30 giorni)
+
+
+```{r, fig.width= 8, fig.height=5, dpi = 300}
+
+lazio30 %>% 
+    group_split(coalition, election) %>% 
+    map_dfr(calc_edu_perc) %>% 
+     mutate(coalition = fct_relevel(coalition, c("Coalizione di centro-sinistra",
+                                  "Coalizione di centro",
+                                  "Coalizione di centro-destra"))) %>% 
+    mutate(value = fct_reorder(value, perc)) %>% 
+    ggplot(aes(value, perc, fill = coalition)) +
+    geom_col(alpha = 0.8) +
+    facet_wrap(~coalition) +
+    coord_flip() +
+    ggthemes::theme_hc() +
+    scale_fill_manual(values = c("#ef3e3e", "#0039aa", "#0a6be1")) +
+    theme(legend.position = "none",
+          panel.spacing=unit(1,"lines")) +
+    scale_y_continuous(labels = scales::percent) +
+    # scale_x_discrete(breaks = c("18", "24",
+    #                             "34", "44",
+    #                             "54", "65+")) +
+    labs(y = "% Budget Spend on Education") +
+    labs(x = "Education\n")  +
+  geom_text(size = 3.5, color = "black",
+             aes(y = perc, label = paste0(round(perc*100, 1), "%")))
+    
+```
+
+
+##### `r last7days_string` (Ultimi 7 giorni)
+
+
+```{r, fig.width= 8, fig.height=5, dpi = 300}
+
+lazio7 %>% 
+    group_split(coalition, election) %>% 
+    map_dfr(calc_edu_perc) %>% 
+     mutate(coalition = fct_relevel(coalition, c("Coalizione di centro-sinistra",
+                                  "Coalizione di centro",
+                                  "Coalizione di centro-destra"))) %>% 
+    mutate(value = fct_reorder(value, perc)) %>% 
+    ggplot(aes(value, perc, fill = coalition)) +
+    geom_col(alpha = 0.8) +
+    facet_wrap(~coalition) +
+    coord_flip() +
+    ggthemes::theme_hc() +
+    scale_fill_manual(values = c("#ef3e3e", "#0039aa", "#0a6be1")) +
+    theme(legend.position = "none",
+          panel.spacing=unit(1,"lines")) +
+    scale_y_continuous(labels = scales::percent) +
+    # scale_x_discrete(breaks = c("18", "24",
+    #                             "34", "44",
+    #                             "54", "65+")) +
+    labs(y = "% Budget Spend on Education") +
+    labs(x = "Education\n")  +
+  geom_text(size = 3.5, color = "black",
+             aes(y = perc, label = paste0(round(perc*100, 1), "%")))
+```
+
+#### Per Partito  {.tabset .tabset-fade .tabset-pills}
+
+##### `r last30days_string` (Ultimi 30 giorni)
+
+
+##### `r last7days_string` (Ultimi 7 giorni)
+
+## Jobs
+
+### Elezioni regionali in Lombardia  {.tabset .tabset-fade .tabset-pills}
+
+#### Per Coalizione  {.tabset .tabset-fade .tabset-pills}
+
+##### `r last30days_string` (Ultimi 30 giorni)
+
+```{r, fig.width= 8, fig.height=5, dpi = 300}
+
+
+calc_jobs_perc <- function(x) {
+    
+total_sppppeen <- x %>% 
+# filter(coalition == "Coalizione di centro-destra") %>% 
+  mutate(total_spend = total_spend_formatted) %>%
+  distinct(internal_id, .keep_all = T)  %>%
+  # mutate(total_spend = readr::parse_number(total_spend_formatted)) %>%
+  mutate(total_spend = ifelse(total_spend == 100, 1, total_spend)) %>% 
+  select(internal_id, total_spend) %>% 
+  arrange(desc(total_spend)) %>% 
+  summarize(total_budget = sum(total_spend)) %>% 
+  ungroup()
+
+x %>% 
+    filter(type == "detailed") %>%
+    filter(detailed_type == "DEMOGRAPHICS") %>% 
+    # count(value, sort = T) %>% 
+    filter(str_detect(value, "grad school|degree|	|Master|[c|C]ollege|degree|[H|h]igh school|Professional degree", negate = T)) %>% 
+  mutate(total_spend = total_spend_formatted) %>%
+  mutate(total_spend = ifelse(total_spend == 100, 1, total_spend)) %>% 
+  # filter(coalition == "Coalizione di centro-destra") %>%  
+  # filter(total_spend_pct != 0) %>% 
+  # group_by(internal_id) %>%
+  # mutate(n_ages = n()) %>% #count(n_ages, sort = T)
+  # ungroup()%>% 
+  mutate(spend_per = total_spend * total_spend_pct) %>% 
+  group_by(value) %>% 
+  summarize(spend_per = sum(spend_per)) %>% 
+  bind_cols(total_sppppeen) %>% 
+  mutate(perc = spend_per/total_budget) %>% 
+            mutate(coalition = x$coalition[1],
+                   party = x$party[1],
+                   election = x$election[1])
+}
+
+lombardy30 %>% 
+    group_split(coalition, election) %>% 
+    map_dfr(calc_jobs_perc) %>% 
+    filter(perc >= 0.015) %>% 
+    filter(str_detect(value, "Relationship|Parents|Partner|Separated|Divorced|Single|Complicated", negate = T)) %>% 
+     mutate(coalition = fct_relevel(coalition, c("Coalizione di centro-sinistra",
+                                  "Coalizione di centro",
+                                  "Coalizione di centro-destra"))) %>% 
+    mutate(value = fct_reorder(value, perc)) %>% 
+    ggplot(aes(value, perc, fill = coalition)) +
+    geom_col(alpha = 0.8) +
+    facet_wrap(~coalition) +
+    coord_flip() +
+    ggthemes::theme_hc() +
+    scale_fill_manual(values = c("#ef3e3e", "#0039aa", "#0a6be1")) +
+    theme(legend.position = "none",
+          panel.spacing=unit(1,"lines")) +
+    scale_y_continuous(labels = scales::percent) +
+    # scale_x_discrete(breaks = c("18", "24",
+    #                             "34", "44",
+    #                             "54", "65+")) +
+    labs(y = "% Budget Spend on Jobs") +
+    labs(x = "Job (Sectors)\n")  +
+  geom_text(size = 3.5, color = "black",
+             aes(y = perc, label = paste0(round(perc*100, 1), "%")))
+    
+
+
+    
+```
+
+
+##### `r last7days_string` (Ultimi 7 giorni)
+
+```{r, fig.width= 8, fig.height=5, dpi = 300}
+
+lombardy7 %>% 
+    group_split(coalition, election) %>% 
+    map_dfr(calc_jobs_perc) %>% 
+    filter(perc >= 0.015) %>% 
+    filter(str_detect(value, "Relationship|Parents|Partner|Separated|Divorced|Single|Complicated", negate = T)) %>% 
+     mutate(coalition = fct_relevel(coalition, c("Coalizione di centro-sinistra",
+                                  "Coalizione di centro",
+                                  "Coalizione di centro-destra"))) %>% 
+    mutate(value = fct_reorder(value, perc)) %>% 
+    ggplot(aes(value, perc, fill = coalition)) +
+    geom_col(alpha = 0.8) +
+    facet_wrap(~coalition) +
+    coord_flip() +
+    ggthemes::theme_hc() +
+    scale_fill_manual(values = c("#ef3e3e", "#0039aa", "#0a6be1")) +
+    theme(legend.position = "none",
+          panel.spacing=unit(1,"lines")) +
+    scale_y_continuous(labels = scales::percent) +
+    # scale_x_discrete(breaks = c("18", "24",
+    #                             "34", "44",
+    #                             "54", "65+")) +
+    labs(y = "% Budget Spend on Jobs") +
+    labs(x = "Job (Sectors)\n")  +
+  geom_text(size = 3.5, color = "black",
+             aes(y = perc, label = paste0(round(perc*100, 1), "%")))
+    
+
+
+
+```
+
+
+#### Per Partito  {.tabset .tabset-fade .tabset-pills}
+
+##### `r last30days_string` (Ultimi 30 giorni)
+
+
+##### `r last7days_string` (Ultimi 7 giorni)
+
+
+### Elezioni regionali in Lazio  {.tabset .tabset-fade .tabset-pills}
+
+#### Per Coalizione  {.tabset .tabset-fade .tabset-pills}
+
+##### `r last30days_string` (Ultimi 30 giorni)
+
+```{r}
+
+lazio30 %>% 
+    group_split(coalition, election) %>% 
+    map_dfr(calc_jobs_perc) %>% 
+    filter(perc >= 0.015) %>% 
+    filter(str_detect(value, "Relationship|Parents|Partner|Separated|Divorced|Single|Complicated", negate = T)) %>% 
+     mutate(coalition = fct_relevel(coalition, c("Coalizione di centro-sinistra",
+                                  "Coalizione di centro",
+                                  "Coalizione di centro-destra"))) %>% 
+    mutate(value = fct_reorder(value, perc)) %>% 
+    ggplot(aes(value, perc, fill = coalition)) +
+    geom_col(alpha = 0.8) +
+    facet_wrap(~coalition) +
+    coord_flip() +
+    ggthemes::theme_hc() +
+    scale_fill_manual(values = c("#ef3e3e", "#0039aa", "#0a6be1")) +
+    theme(legend.position = "none",
+          panel.spacing=unit(1,"lines")) +
+    scale_y_continuous(labels = scales::percent) +
+    # scale_x_discrete(breaks = c("18", "24",
+    #                             "34", "44",
+    #                             "54", "65+")) +
+    labs(y = "% Budget Spend on Jobs") +
+    labs(x = "Job (Sectors)\n")  +
+  geom_text(size = 3.5, color = "black",
+             aes(y = perc, label = paste0(round(perc*100, 1), "%")))
+    
+```
+
+
+
+##### `r last7days_string` (Ultimi 7 giorni)
+
+```{r, fig.width= 8, fig.height=5, dpi = 300}
+
+lazio7 %>% 
+    group_split(coalition, election) %>% 
+    map_dfr(calc_jobs_perc) %>% 
+    filter(perc >= 0.015) %>% 
+    filter(str_detect(value, "Relationship|Parents|Partner|Separated|Divorced|Single|Complicated", negate = T)) %>% 
+     mutate(coalition = fct_relevel(coalition, c("Coalizione di centro-sinistra",
+                                  "Coalizione di centro",
+                                  "Coalizione di centro-destra"))) %>% 
+    mutate(value = fct_reorder(value, perc)) %>% 
+    ggplot(aes(value, perc, fill = coalition)) +
+    geom_col(alpha = 0.8) +
+    facet_wrap(~coalition) +
+    coord_flip() +
+    ggthemes::theme_hc() +
+    scale_fill_manual(values = c("#ef3e3e", "#0039aa", "#0a6be1")) +
+    theme(legend.position = "none",
+          panel.spacing=unit(1,"lines")) +
+    scale_y_continuous(labels = scales::percent) +
+    # scale_x_discrete(breaks = c("18", "24",
+    #                             "34", "44",
+    #                             "54", "65+")) +
+    labs(y = "% Budget Spend on Jobs") +
+    labs(x = "Job (Sectors)\n")  +
+  geom_text(size = 3.5, color = "black",
+             aes(y = perc, label = paste0(round(perc*100, 1), "%")))
+    
+
+
+
+```
+
+#### Per Partito  {.tabset .tabset-fade .tabset-pills}
+
+##### `r last30days_string` (Ultimi 30 giorni)
+
+
+##### `r last7days_string` (Ultimi 7 giorni)
