@@ -85,8 +85,8 @@ main30 <- election_dat30 %>%
     filter(election == "Main party" | election == "Main party")
 
 
-last7days_string <- "5 febbraio - 11 febbraio 2023"
-last30days_string <- "13 gennaio - 11 febbraio 2023"
+last7days_string <- "6 febbraio - 12 febbraio 2023"
+last30days_string <- "14 gennaio - 12 febbraio 2023"
 
 # election_dat30 %>% 
     
@@ -244,7 +244,7 @@ targeting_on_each <- howmuchisinterest %>%
 return(targeting_on_each)   
 }
 
-relationshipstuff <- "[r|R]elationship|Parents|Partner|Separated|Divorced|Single|Complicated|Married|Engaged|Newlywed|Civil Union|Unspecified"
+relationshipstuff <- "[r|R]elationship|Parents|Partner|Separated|Divorced|Single|Complicated|Married|Engaged|Newlywed|Civil Union|Unspecified|Away|Recently moved"
 ```
 
 
@@ -1477,7 +1477,7 @@ contested_dat %>% #count(coalition) %>% pull(coalition) %>% unique() %>% dput()
   # scale_fill_manual("Page Groups", values = c("#ff2700", "#008fd5")) +
   ggthemes::theme_hc() +
   labs(x = "Targeting criteria", y = "% of budget spent on targeting method", #title = "Contested targeted interests (US midterms 2022)", subtitle = " ", 
-       caption = "Source: Meta Ad Library and data compiled by Who Targets Me. Data Viz: Fabio Votta (@favstats).") +
+       caption = "Source: Meta Ad Library. Data Viz: Fabio Votta (@favstats).") +
   theme(legend.position = "bottom", plot.title = element_text(size = 28, face = "bold", hjust = 1.25), text=element_text(family="mono", face = "bold"), plot.caption = element_text(hjust = -1.7)) +
   guides(fill=guide_legend(nrow=2,byrow=TRUE))  +
     scale_fill_manual(values = col_colors)
@@ -2557,7 +2557,8 @@ lazio30 %>%
     labs(y = "% Budget Spend on Education") +
     labs(x = "Education\n")  +
   geom_text(size = 3.5, color = "black",
-             aes(y = perc, label = paste0(round(perc*100, 1), "%")))
+             aes(y = perc, label = paste0(round(perc*100, 1), "%")))  +
+    scale_fill_coalition()
     
 ```
 
@@ -2589,7 +2590,8 @@ lazio7 %>%
     labs(y = "% Budget Spend on Education") +
     labs(x = "Education\n")  +
   geom_text(size = 3.5, color = "black",
-             aes(y = perc, label = paste0(round(perc*100, 1), "%")))
+             aes(y = perc, label = paste0(round(perc*100, 1), "%")))  +
+    scale_fill_coalition()
 ```
 
 #### Per Partito  {.tabset .tabset-fade .tabset-pills}
@@ -2876,7 +2878,8 @@ lazio30 %>%
     labs(x = "Job (Sectors)\n")  +
   geom_text(size = 3.5, color = "black",
              aes(y = perc, label = paste0(round(perc*100, 1), "%")))  +
-    scale_x_discrete(label = function(x) stringr::str_trunc(x, 22))
+    scale_x_discrete(label = function(x) stringr::str_trunc(x, 22))  +
+    scale_fill_coalition()
     
 ```
 
@@ -2911,7 +2914,8 @@ lazio7 %>%
     labs(x = "Job (Sectors)\n")  +
   geom_text(size = 3.5, color = "black",
              aes(y = perc, label = paste0(round(perc*100, 1), "%")))   +
-    scale_x_discrete(label = function(x) stringr::str_trunc(x, 22))
+    scale_x_discrete(label = function(x) stringr::str_trunc(x, 22)) +
+    scale_fill_coalition()
     
 
 
